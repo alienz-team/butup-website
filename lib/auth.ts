@@ -74,5 +74,5 @@ export async function isAdmin(): Promise<boolean> {
 
 /** Gate for the admin pages and every admin server action. */
 export async function assertAdmin(): Promise<void> {
-  if (!(await isAdmin())) redirect("/admin/login");
+  if (!(await isAdmin())) redirect("/login");
 }

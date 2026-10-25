@@ -1,7 +1,7 @@
 import Link from "next/link";
 import CategoryBento from "@/components/CategoryBento";
 import Footer from "@/components/Footer";
-import HeroSlider from "@/components/HeroSlider";
+import Hero from "@/components/Hero";
 import MobileDock from "@/components/MobileDock";
 import Navbar from "@/components/Navbar";
 import ProductGrid from "@/components/ProductGrid";
@@ -17,7 +17,7 @@ export default async function Home() {
     <>
       <Navbar lang={lang} theme={theme} />
       <main>
-        <HeroSlider lang={lang} />
+        <Hero lang={lang} />
         <CategoryBento categories={categories} lang={lang} />
 
         <section id="deals" className="mx-auto max-w-7xl px-4 pb-20 md:px-8 md:pb-28">

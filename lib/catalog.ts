@@ -93,16 +93,6 @@ export const SEED_CATEGORIES: CategoryDTO[] = [
   },
 ];
 
-export const HERO_SLIDES: { image: string; categorySlug: string }[] = [
-  { image: img(PHOTO.denimDress), categorySlug: "clothing" },
-  { image: img(PHOTO.bagLeather), categorySlug: "shoes-bags" },
-  { image: img(PHOTO.perfumeGold), categorySlug: "beauty" },
-  { image: img(PHOTO.skincareDisplay), categorySlug: "beauty" },
-  { image: img(PHOTO.blushTrousers), categorySlug: "clothing" },
-  { image: img(PHOTO.heels), categorySlug: "shoes-bags" },
-  { image: img(PHOTO.pearls), categorySlug: "accessories" },
-];
-
 const C = {
   black: { ar: "أسود", en: "Black", hex: "#1A1A1A" },
   ivory: { ar: "عاجي", en: "Ivory", hex: "#F3EBDD" },

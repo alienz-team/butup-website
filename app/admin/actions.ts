@@ -40,7 +40,7 @@ export async function loginAction(_: string | null, fd: FormData): Promise<strin
 
 export async function logoutAction() {
   await destroySession();
-  redirect("/admin/login");
+  redirect("/login");
 }
 
 function parseColors(raw: string): Color[] {

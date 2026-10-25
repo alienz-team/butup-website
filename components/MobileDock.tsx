@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUp, LayoutGrid, MessageCircle, ShoppingBag } from "lucide-react";
+import { ArrowUp, LayoutGrid, LogIn, MessageCircle, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { dict, waLink, WA_GREETING, type Lang } from "@/lib/i18n";
 
@@ -58,6 +58,10 @@ export default function MobileDock({ lang }: { lang: Lang }) {
         <Link href="/#deals" className={item}>
           <ShoppingBag size={20} />
           {t.shop}
+        </Link>
+        <Link href="/login" className={item}>
+          <LogIn size={20} />
+          {t.login}
         </Link>
       </nav>
     </div>

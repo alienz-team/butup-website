@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Moon, Sun } from "lucide-react";
+import { LogIn, Moon, Sun } from "lucide-react";
 import { useTransition } from "react";
+import LoginModal from "@/components/LoginModal";
 import { LANG_COOKIE, LOGO_URL, THEME_COOKIE, dict, type Lang, type Theme } from "@/lib/i18n";
 
 const YEAR = 60 * 60 * 24 * 365;
@@ -53,6 +54,16 @@ export default function Navbar({ lang, theme }: { lang: Lang; theme: Theme }) {
         </nav>
 
         <div className="flex items-center gap-2" aria-busy={pending}>
+          <div className="hidden md:block">
+            <LoginModal lang={lang} />
+          </div>
+          <Link
+            href="/login"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-gold px-3 text-sm font-medium text-on-gold md:hidden"
+          >
+            <LogIn size={15} aria-hidden />
+            {t.nav.login}
+          </Link>
           <button
             type="button"
             onClick={switchLang}
