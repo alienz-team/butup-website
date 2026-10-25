@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #fdfbf7;
+  --surface: #ffffff;
+  --surface-2: #f4eee3;
+  --line: #e7dfd0;
+  --fg: #1a1a1a;
+  --muted: #6b645a;
+  --gold: #b8975a;
+  --gold-ink: #7d5f26;
+  --on-gold: #1a1a1a;
+  --blush: #f3e3dc;
+  --overlay: rgba(20, 16, 12, 0.55);
+}
+
+.dark {
+  --bg: #0a0a0a;
+  --surface: #141311;
+  --surface-2: #1c1a16;
+  --line: #2b2822;
+  --fg: #f1ebdf;
+  --muted: #a69d8c;
+  --gold: #c9aa71;
+  --gold-ink: #d6b97f;
+  --on-gold: #14110a;
+  --blush: #1d1816;
+  --overlay: rgba(0, 0, 0, 0.6);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --color-on-gold: var(--on-gold);
+  --color-blush: var(--blush);
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), var(--font-amiri), Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4.5rem;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+/* Logo stays untouched; in dark mode it sits on a cream chip so the charcoal mark stays legible. */
+.logo-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.2rem 0.55rem;
+}
+.dark .logo-chip {
+  background: #fdfbf7;
+}
+
+/* Tile zoom for the category bento and product cards */
+.zoom-img {
+  transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.zoom:hover .zoom-img,
+.zoom:focus-visible .zoom-img {
+  transform: scale(1.06);
+}
+
+@keyframes drift {
+  from { transform: scale(1.02); }
+  to { transform: scale(1.1); }
+}
+.drift {
+  animation: drift 9s ease-out forwards;
+}
+
+@media (max-width: 767px) {
+  body { padding-bottom: 4.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .drift { animation: none; }
+  .zoom:hover .zoom-img { transform: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

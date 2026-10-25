@@ -1,0 +1,15 @@
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+
+/** scrypt hash in the form `salt:hash` (hex). Shared by the seed script and the login action. */
+export function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
+}
+
+export function verifyPassword(password: string, stored: string): boolean {
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const a = Buffer.from(hash, "hex");
+  const b = scryptSync(password, salt, a.length);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
