@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const csp = [
   "default-src 'self'",
-  "img-src 'self' data: blob: https://images.cdn-files-a.com https://images.unsplash.com https://*.public.blob.vercel-storage.com",
+  "img-src 'self' data: blob: https://images.cdn-files-a.com https://images.unsplash.com https://*.public.blob.vercel-storage.com https://*.supabase.co",
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
   "font-src 'self' data:",
@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.cdn-files-a.com" },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+      { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" },
     ],
   },
   async headers() {

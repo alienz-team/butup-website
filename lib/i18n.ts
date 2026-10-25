@@ -7,10 +7,11 @@ export const THEME_COOKIE = "bu_theme";
 export const LOGO_URL = "https://images.cdn-files-a.com/uploads/8410793/400_filter_nobg_64ee1506c22a2.png";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://putup.store";
 
-const digits = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "").replace(/\D/g, "");
+const digits = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "218915229703").replace(/\D/g, "");
 
 export const CONTACT = {
   whatsappNumber: digits,
+  whatsappDisplay: "+218-91-5229703",
   instagram: "https://www.instagram.com/beaut_up",
   instagramHandle: "beaut_up",
   facebook:

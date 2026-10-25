@@ -30,7 +30,7 @@ export default function Footer({ lang }: { lang: Lang }) {
             </li>
             <li>
               <a href={waLink(WA_GREETING)} target="_blank" rel="noopener noreferrer" className={link}>
-                <MessageCircle size={20} aria-hidden /> WhatsApp
+                <MessageCircle size={20} aria-hidden /> <span dir="ltr">{CONTACT.whatsappDisplay}</span>
               </a>
             </li>
           </ul>

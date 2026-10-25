@@ -7,7 +7,7 @@ export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 export const MAX_FILES = 6;
 
 /** Hosts the storefront is allowed to render images from (mirrors next.config.ts). */
-const ALLOWED_HOST = /^(images\.unsplash\.com|images\.cdn-files-a\.com|[a-z0-9-]+\.public\.blob\.vercel-storage\.com)$/;
+const ALLOWED_HOST = /^(images\.unsplash\.com|images\.cdn-files-a\.com|[a-z0-9-]+\.public\.blob\.vercel-storage\.com|[a-z0-9]+\.supabase\.co)$/;
 
 export function isAllowedImageUrl(value: string): boolean {
   if (value.startsWith("/uploads/") && !value.includes("..")) return true;
@@ -27,6 +27,7 @@ function sniff(buf: Buffer): "jpg" | "png" | "webp" | null {
   return null;
 }
 
+const BUCKET = "product-images";
 const CONTENT_TYPE = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" } as const;
 
 /** Stores one validated image and returns its public URL. Throws a user-facing Error. */
@@ -42,8 +43,21 @@ export async function storeImage(file: File): Promise<string> {
     const blob = await put(name, buf, { access: "public", contentType: CONTENT_TYPE[kind] });
     return blob.url;
   }
+  const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (supaUrl && serviceKey) {
+    // Server-side only: the service key never reaches the browser. The bucket has no
+    // anon write policy, so this is the only way files get in.
+    const res = await fetch(`${supaUrl}/storage/v1/object/${BUCKET}/${name}`, {
+      method: "POST",
+      headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}`, "content-type": CONTENT_TYPE[kind], "x-upsert": "false" },
+      body: new Uint8Array(buf),
+    });
+    if (!res.ok) throw new Error(`Supabase Storage upload failed (${res.status})`);
+    return `${supaUrl}/storage/v1/object/public/${BUCKET}/${name}`;
+  }
   if (process.env.NODE_ENV === "production") {
-    throw new Error("Image uploads need BLOB_READ_WRITE_TOKEN (Vercel Blob). Paste an image URL instead.");
+    throw new Error("Image uploads need SUPABASE_SERVICE_ROLE_KEY or BLOB_READ_WRITE_TOKEN. Paste an image URL instead.");
   }
   const dir = path.join(process.cwd(), "public", "uploads", "products");
   await mkdir(dir, { recursive: true });
