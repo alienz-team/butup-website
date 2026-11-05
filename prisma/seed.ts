@@ -8,19 +8,23 @@ async function main() {
   for (const [i, c] of SEED_CATEGORIES.entries()) {
     await prisma.category.upsert({
       where: { slug: c.slug },
-      update: { nameAr: c.nameAr, nameEn: c.nameEn, image: c.image, sortOrder: i },
+      update: { nameAr: c.nameAr, nameEn: c.nameEn, image: c.image, parentId: c.parentId, sortOrder: i },
       create: { ...c, sortOrder: i },
     });
   }
 
-  // Seed products are refreshed from lib/catalog.ts (images, copy, price); stock is left as the dashboard set it.
+  // The store mirrors the original Site123 catalog exactly: products are overwritten from lib/catalog.ts
+  // and anything not in that list (older seed rows, test products) is removed.
   for (const p of SEED_PRODUCTS) {
+    const { id: _id, ...data } = p;
     await prisma.product.upsert({
       where: { slug: p.slug },
-      update: { titleAr: p.titleAr, titleEn: p.titleEn, descriptionAr: p.descriptionAr, descriptionEn: p.descriptionEn, price: p.price, compareAtPrice: p.compareAtPrice, images: p.images, sizes: p.sizes, colors: p.colors as unknown as object, categoryId: p.categoryId, isFeatured: p.isFeatured },
+      update: { ...data, colors: p.colors as unknown as object },
       create: { ...p, colors: p.colors as unknown as object },
     });
   }
+  await prisma.product.deleteMany({ where: { slug: { notIn: SEED_PRODUCTS.map((p) => p.slug) } } });
+  await prisma.category.deleteMany({ where: { slug: { notIn: SEED_CATEGORIES.map((c) => c.slug) } } });
 
   const email = process.env.ADMIN_EMAIL?.toLowerCase();
   const password = process.env.ADMIN_PASSWORD;

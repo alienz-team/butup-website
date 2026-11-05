@@ -13,11 +13,11 @@ export default async function LoginPage() {
   return (
     <main className="grid min-h-dvh place-items-center px-4">
       <div className="w-full max-w-sm">
-        <h1 className="font-display text-4xl font-medium">{t.login.title}</h1>
+        <h1 className="display text-3xl">{t.login.title}</h1>
         <p className="mt-2 text-sm text-muted">{t.login.hint}</p>
         <LoginForm lang={lang} />
         <Link href="/" className="mt-6 block text-center text-sm text-muted underline underline-offset-4 hover:text-fg">
-          {t.nav.shop}
+          {t.nav.home}
         </Link>
       </div>
     </main>

@@ -1,55 +1,42 @@
-import Image from "next/image";
 import Link from "next/link";
-import { pick, type ProductDTO } from "@/lib/catalog";
-import { dict, formatPrice, type Lang } from "@/lib/i18n";
+import { money, pick, type ProductDTO } from "@/lib/catalog";
+import { dict, type Lang } from "@/lib/i18n";
 
-/** Image, title, price. The second photo fades in on hover; nothing else competes with the picture. */
-export default function ProductCard({
-  product: p,
-  lang,
-  sizes = "(min-width:1024px) 25vw, (min-width:640px) 33vw, 50vw",
-  priority = false,
-}: {
-  product: ProductDTO;
-  lang: Lang;
-  sizes?: string;
-  priority?: boolean;
-}) {
+const discount = (p: ProductDTO) => (p.compareAtPrice && p.compareAtPrice > p.price ? Math.round((1 - p.price / p.compareAtPrice) * 100) : 0);
+
+/** Site123 product box: white card with shadow, 3:4 photo (second photo on hover), title and price below. */
+export default function ProductCard({ product: p, lang }: { product: ProductDTO; lang: Lang }) {
   const title = pick(p, "title", lang);
-  const soldOut = p.stock <= 0;
+  const off = discount(p);
+  const href = `/product/${p.slug}`;
+  const bg = (src: string) => ({ backgroundImage: `url(${src})` });
   return (
-    <Link href={`/product/${p.slug}`} className="group block" aria-label={title}>
-      <div className="relative aspect-[3/4] overflow-hidden bg-surface2">
-        <Image
-          src={p.images[0]}
-          alt={title}
-          fill
-          sizes={sizes}
-          quality={85}
-          priority={priority}
-          className="object-cover transition duration-[1400ms] ease-out group-hover:scale-[1.04] group-focus-visible:scale-[1.04]"
-        />
-        {p.images[1] ? (
-          <Image
-            src={p.images[1]}
-            alt=""
-            fill
-            sizes={sizes}
-            quality={85}
-            className="object-cover opacity-0 transition duration-700 ease-out group-hover:scale-[1.04] group-hover:opacity-100 group-focus-visible:opacity-100"
-          />
+    <div className="p-box h-full">
+      <div className="relative">
+        <Link href={href} aria-label={title} className="relative block w-full" style={{ paddingBottom: "133.3333%" }}>
+          <span className="absolute inset-0 bg-cover bg-center" style={bg(p.images[0])} role="img" aria-label={title} />
+          {p.images[1] ? <span className="second-image absolute inset-0 bg-cover bg-center" style={bg(p.images[1])} aria-hidden /> : null}
+        </Link>
+        {off > 0 ? (
+          <span dir="ltr" className="absolute start-[10px] top-[15px] z-[1] rounded-[4px] bg-black p-1 text-[0.8em] text-white">-{off}%</span>
         ) : null}
-        {soldOut ? (
-          <span className="absolute start-3 top-3 bg-bg/90 px-2.5 py-1 text-[11px]">{dict[lang].product.out}</span>
-        ) : null}
+        <div className="quick absolute inset-x-0 bottom-2 flex justify-center px-2">
+          <Link href={href} className="flex w-full items-center justify-center rounded-lg bg-accent py-2 text-[0.8em] text-white opacity-90">
+            {dict[lang].quickView}
+          </Link>
+        </div>
       </div>
-      <div className="mt-4 flex items-baseline justify-between gap-4">
-        <h3 className="text-[15px] font-normal leading-snug">{title}</h3>
-        <p className="shrink-0 text-sm tabular-nums">
-          {p.compareAtPrice ? <span className="me-2 text-muted line-through">{formatPrice(p.compareAtPrice, lang)}</span> : null}
-          {formatPrice(p.price, lang)}
+      <div className="flex flex-col gap-3 p-4">
+        <h4 className="m-0 text-[1em] font-normal leading-normal">
+          <Link href={href} className="line-clamp-2">{title}</Link>
+        </h4>
+        <p className="m-0 text-[1em]">
+          {off > 0 && p.compareAtPrice ? (
+            <span className="me-2 text-[0.7em] line-through opacity-40">{money(p.compareAtPrice, lang)}</span>
+          ) : null}
+          <Link href={href} className="text-accent">{money(p.price, lang)}</Link>
         </p>
       </div>
-    </Link>
+    </div>
   );
 }

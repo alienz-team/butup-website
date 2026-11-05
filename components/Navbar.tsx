@@ -2,45 +2,44 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { Menu, Moon, Search, ShoppingBag, Sun, X } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, Moon, Phone, ShoppingCart, Sun, X } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
 import { useCart } from "@/components/CartProvider";
-import LoginModal from "@/components/LoginModal";
-import { LANG_COOKIE, LOGO_URL, THEME_COOKIE, dict, type Lang, type Theme } from "@/lib/i18n";
+import { pick, type CategoryDTO } from "@/lib/catalog";
+import { CONTACT, LANG_COOKIE, LOGO_URL, THEME_COOKIE, dict, type Lang, type Theme } from "@/lib/i18n";
 
 const YEAR = 60 * 60 * 24 * 365;
 const setCookie = (name: string, value: string) => {
   document.cookie = `${name}=${value}; path=/; max-age=${YEAR}; samesite=lax`;
 };
 
-export default function Navbar({ lang, theme }: { lang: Lang; theme: Theme }) {
+/**
+ * Site123 header: fixed black bar, 100px tall and 80px once scrolled. Logo on the start side, white
+ * 14px menu with white dropdowns, magenta on hover, phone and cart on the end side.
+ */
+export default function Navbar({ lang, theme, categories }: { lang: Lang; theme: Theme; categories: CategoryDTO[] }) {
   const t = dict[lang];
   const router = useRouter();
+  const pathname = usePathname();
   const { count, openCart } = useCart();
   const [, startTransition] = useTransition();
+  const [scrolledY, setScrolledY] = useState(false);
+  // Inside pages (category, product) start with the solid black bar; the home page starts transparent.
+  const scrolled = scrolledY || pathname !== "/";
   const [menu, setMenu] = useState(false);
-  const [searching, setSearching] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (searching) searchRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setSearching(false);
-        setMenu(false);
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [searching]);
+    const onScroll = () => setScrolledY(window.scrollY > 50);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const switchLang = () => {
     setCookie(LANG_COOKIE, lang === "ar" ? "en" : "ar");
     startTransition(() => router.refresh());
   };
-
   const switchTheme = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
     document.documentElement.classList.toggle("dark", next === "dark");
@@ -48,128 +47,101 @@ export default function Navbar({ lang, theme }: { lang: Lang; theme: Theme }) {
     startTransition(() => router.refresh());
   };
 
-  const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
-    setSearching(false);
-    router.push(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
-  };
+  const tops = categories.filter((c) => !c.parentId);
+  const subs = (id: string) => categories.filter((c) => c.parentId === id);
+  const startItems = tops.slice(0, 3);
+  const endItems = tops.slice(3);
+  const tone = scrolled ? "text-white" : "text-black";
+  const link = `block px-[15px] py-2 text-[14px] tracking-[0.07em] transition-colors hover:text-accent ${tone}`;
 
-  const links = [
-    { href: "/shop", label: t.nav.shop },
-    { href: "/#categories", label: t.nav.categories },
-    { href: "/#story", label: t.nav.story },
-    { href: "#contact", label: t.nav.contact },
-  ];
-  const iconBtn = "relative grid size-10 place-items-center transition-opacity hover:opacity-60";
+  const Item = ({ c }: { c: CategoryDTO }) => (
+    <li className="group relative">
+      <Link href={`/category/${c.slug}`} className={link}>
+        {pick(c, "name", lang)}
+        {subs(c.id).length > 0 ? <span aria-hidden className="ms-1.5 inline-block size-0 border-x-[4px] border-t-[4px] border-x-transparent border-t-current align-middle" /> : null}
+      </Link>
+      {subs(c.id).length > 0 ? (
+        <ul className="invisible absolute start-0 top-full z-50 min-w-[160px] border border-black/15 bg-white py-[5px] opacity-0 shadow-[0_6px_12px_rgba(0,0,0,0.175)] transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+          {subs(c.id).map((s) => (
+            <li key={s.id}>
+              <Link href={`/category/${s.slug}`} className="block whitespace-nowrap px-5 py-[3px] text-[14px] leading-[1.9] text-[#333] hover:text-accent">
+                {pick(s, "name", lang)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </li>
+  );
+
+  const iconBtn = `grid size-9 place-items-center transition-colors hover:text-accent ${tone}`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-glass backdrop-blur-xl">
-      <div className="mx-auto grid h-16 max-w-[1500px] grid-cols-[1fr_auto_1fr] items-center px-5 md:h-[72px] md:px-10">
-        <div className="flex items-center gap-8">
-          <button type="button" className={`${iconBtn} md:hidden`} aria-label={t.nav.menu} aria-expanded={menu} onClick={() => setMenu(true)}>
-            <Menu size={20} strokeWidth={1.25} />
-          </button>
-          <nav aria-label="Primary" className="hidden items-center gap-8 md:flex">
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} className="underline-link pb-0.5 text-[13px] tracking-wide">
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <Link href="/" className="logo-chip" aria-label={t.brand}>
-          <Image src={LOGO_URL} alt={t.brand} width={56} height={46} unoptimized priority className="h-9 w-auto md:h-10" />
+    <header className={`fixed inset-x-0 top-0 z-40 text-white transition-[background-color,height] duration-300 ${scrolled ? "bg-nav shadow-md" : "bg-transparent"} `}>
+      {/* Desktop: logo centred, menu split on both sides (Site123 header layout 21) */}
+      <div className={`mx-auto hidden w-full max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center px-[15px] transition-[height] duration-300 md:grid ${scrolled ? "h-[80px]" : "h-[100px]"}`}>
+        <nav aria-label="Primary" className="flex justify-end">
+          <ul className="flex items-center">
+            <li><Link href="/" className={link}>{t.nav.home}</Link></li>
+            {startItems.map((c) => <Item key={c.id} c={c} />)}
+          </ul>
+        </nav>
+        <Link href="/" className="mx-8 inline-flex items-center" aria-label={t.brand}>
+          <Image src={LOGO_URL} alt={t.brand} width={120} height={100} unoptimized priority className={`${scrolled ? "h-[56px] brightness-0 invert" : "h-[80px]"} w-auto transition-all duration-300`} />
         </Link>
-
-        <div className="flex items-center justify-end gap-0.5 md:gap-1">
-          <button type="button" className={iconBtn} aria-label={t.nav.search} onClick={() => setSearching(true)}>
-            <Search size={19} strokeWidth={1.25} />
-          </button>
-          <button type="button" onClick={switchLang} className="hidden h-10 px-3 text-[13px] transition-opacity hover:opacity-60 md:block">
-            {t.toggles.lang}
-          </button>
-          <button
-            type="button"
-            onClick={switchTheme}
-            aria-label={theme === "dark" ? t.toggles.toLight : t.toggles.toDark}
-            className={`${iconBtn} hidden md:grid`}
-          >
-            {theme === "dark" ? <Sun size={18} strokeWidth={1.25} /> : <Moon size={18} strokeWidth={1.25} />}
-          </button>
-          <div className="hidden ps-2 md:block">
-            <LoginModal lang={lang} />
+        <div className="flex items-center justify-start">
+          <ul className="flex items-center">
+            {endItems.map((c) => <Item key={c.id} c={c} />)}
+            <li><Link href="/#contact" className={link}>{dict[lang].sections.contact}</Link></li>
+          </ul>
+          <div className="ms-2 flex items-center">
+            <a href={`tel:${CONTACT.sitePhone.replace(/-/g, "")}`} className={iconBtn} aria-label={CONTACT.sitePhone}><Phone size={16} strokeWidth={1.75} /></a>
+            <button type="button" onClick={openCart} aria-label={`${t.nav.cart} (${count})`} className={`relative ${iconBtn}`}>
+              <ShoppingCart size={17} strokeWidth={1.75} />
+              {count > 0 ? <span className="absolute -end-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-accent px-1 text-[10px] leading-4 text-white tabular-nums">{count}</span> : null}
+            </button>
+            <button type="button" onClick={switchLang} className={`px-2 text-[12px] transition-colors hover:text-accent ${tone}`}>{t.toggles.lang}</button>
+            <button type="button" onClick={switchTheme} aria-label={theme === "dark" ? t.toggles.toLight : t.toggles.toDark} className={iconBtn}>
+              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
           </div>
-          <button type="button" className={iconBtn} aria-label={`${t.nav.cart} (${count})`} onClick={openCart}>
-            <ShoppingBag size={19} strokeWidth={1.25} />
-            {count > 0 ? (
-              <span className="absolute end-1 top-1.5 grid min-w-4 place-items-center rounded-full bg-fg px-1 text-[10px] leading-4 text-bg tabular-nums">
-                {count}
-              </span>
-            ) : null}
-          </button>
         </div>
       </div>
 
-      <AnimatePresence>
-        {searching ? (
-          <motion.form
-            onSubmit={onSearch}
-            role="search"
-            className="absolute inset-x-0 top-full border-b border-line bg-bg"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="mx-auto flex max-w-[1500px] items-center gap-4 px-5 py-5 md:px-10">
-              <Search size={20} strokeWidth={1.25} aria-hidden />
-              <input ref={searchRef} name="q" type="search" placeholder={dict[lang].shop.searchPlaceholder} className="display flex-1 bg-transparent text-2xl outline-none placeholder:text-muted md:text-4xl" />
-              <button type="button" aria-label={dict[lang].shop.close} onClick={() => setSearching(false)} className={iconBtn}>
-                <X size={20} strokeWidth={1.25} />
-              </button>
-            </div>
-          </motion.form>
-        ) : null}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {menu ? (
-          <div className="fixed inset-0 z-50 md:hidden">
-            <motion.div className="absolute inset-0 bg-black/40" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMenu(false)} aria-hidden />
-            <motion.div
-              className="absolute inset-y-0 start-0 flex w-[82%] max-w-sm flex-col bg-bg px-7 py-6"
-              initial={{ x: lang === "ar" ? "100%" : "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: lang === "ar" ? "100%" : "-100%" }}
-              transition={{ type: "tween", ease: [0.22, 0.8, 0.2, 1], duration: 0.45 }}
-            >
-              <button type="button" className={`${iconBtn} -ms-2 self-start`} aria-label={dict[lang].shop.close} onClick={() => setMenu(false)}>
-                <X size={22} strokeWidth={1.25} />
-              </button>
-              <nav className="mt-8 flex flex-col gap-5">
-                {links.map((l) => (
-                  <Link key={l.href} href={l.href} onClick={() => setMenu(false)} className="display text-4xl">
-                    {l.label}
+      {/* Mobile */}
+      <div className="flex h-[60px] items-center justify-between bg-nav px-3 text-white md:hidden">
+        <button type="button" aria-label={t.nav.menu} aria-expanded={menu} onClick={() => setMenu((v) => !v)} className="grid size-10 place-items-center">
+          {menu ? <X size={24} /> : <Menu size={24} />}
+        </button>
+        <Link href="/" aria-label={t.brand}><Image src={LOGO_URL} alt={t.brand} width={120} height={100} unoptimized className="h-[44px] w-auto brightness-0 invert" /></Link>
+        <button type="button" onClick={openCart} aria-label={`${t.nav.cart} (${count})`} className="relative grid size-10 place-items-center">
+          <ShoppingCart size={22} strokeWidth={1.75} />
+          {count > 0 ? <span className="absolute end-0 top-0 grid min-w-4 place-items-center rounded-full bg-accent px-1 text-[10px] leading-4 text-white">{count}</span> : null}
+        </button>
+      </div>
+      {menu ? (
+        <nav aria-label="Mobile" className="max-h-[calc(100dvh-60px)] overflow-y-auto border-t border-white/10 bg-nav px-5 pb-6 text-center md:hidden">
+          <ul className="space-y-1 pt-3 text-[20px]">
+            <li><Link href="/" onClick={() => setMenu(false)} className="block py-2">{t.nav.home}</Link></li>
+            {tops.map((c) => (
+              <li key={c.id}>
+                <Link href={`/category/${c.slug}`} onClick={() => setMenu(false)} className="block py-2">{pick(c, "name", lang)}</Link>
+                {subs(c.id).map((s) => (
+                  <Link key={s.id} href={`/category/${s.slug}`} onClick={() => setMenu(false)} className="block py-1 text-[16px] text-white/70">
+                    {pick(s, "name", lang)}
                   </Link>
                 ))}
-              </nav>
-              <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-line pt-6 text-sm">
-                <button type="button" onClick={switchLang} className="border border-line px-4 py-2">
-                  {t.toggles.lang}
-                </button>
-                <button type="button" onClick={switchTheme} className="border border-line px-4 py-2">
-                  {theme === "dark" ? t.toggles.toLight : t.toggles.toDark}
-                </button>
-                <Link href="/login" onClick={() => setMenu(false)} className="bg-fg px-5 py-2 text-bg">
-                  {t.nav.login}
-                </Link>
-              </div>
-            </motion.div>
+              </li>
+            ))}
+            <li><Link href="/#contact" onClick={() => setMenu(false)} className="block py-2">{dict[lang].sections.contact}</Link></li>
+          </ul>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3 border-t border-white/10 pt-5 text-sm">
+            <button type="button" onClick={switchLang} className="border border-white/30 px-4 py-2">{t.toggles.lang}</button>
+            <button type="button" onClick={switchTheme} className="border border-white/30 px-4 py-2">{theme === "dark" ? t.toggles.toLight : t.toggles.toDark}</button>
+            <Link href="/login" onClick={() => setMenu(false)} className="bg-accent px-5 py-2 text-white">{t.nav.login}</Link>
           </div>
-        ) : null}
-      </AnimatePresence>
+        </nav>
+      ) : null}
     </header>
   );
 }

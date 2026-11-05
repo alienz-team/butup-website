@@ -21,12 +21,16 @@ enum OrderStatus {
 }
 
 model Category {
-  id        String    @id @default(cuid())
+  id        String     @id @default(cuid())
   nameAr    String
   nameEn    String
-  slug      String    @unique
+  slug      String     @unique
   image     String
-  sortOrder Int       @default(0)
+  sortOrder Int        @default(0)
+  /// Sub-categories (e.g. dresses under clothing) point at their parent.
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
   products  Product[]
 }
 
@@ -49,6 +53,7 @@ model Product {
   isFeatured    Boolean  @default(false)
   isActive      Boolean  @default(true)
   stock         Int      @default(0)
+  sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

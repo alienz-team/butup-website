@@ -5,10 +5,11 @@ import { useCart } from "@/components/CartProvider";
 import type { ProductDTO } from "@/lib/catalog";
 import { dict, type Lang } from "@/lib/i18n";
 
-/** Size and color selectors plus the add-to-cart button. */
+/** Quantity, optional size and colour, and the add-to-cart button. */
 export default function ProductBuy({ product: p, lang }: { product: ProductDTO; lang: Lang }) {
   const t = dict[lang].product;
   const { add } = useCart();
+  const [qty, setQty] = useState(1);
   const [size, setSize] = useState<string | null>(null);
   const [colorIdx, setColorIdx] = useState(0);
   const [needSize, setNeedSize] = useState(false);
@@ -20,25 +21,20 @@ export default function ProductBuy({ product: p, lang }: { product: ProductDTO; 
       setNeedSize(true);
       return;
     }
-    add({
-      slug: p.slug,
-      titleAr: p.titleAr,
-      titleEn: p.titleEn,
-      image: p.images[0],
-      price: p.price,
-      size,
-      color: color ? color[lang] : null,
-    });
+    add({ slug: p.slug, titleAr: p.titleAr, titleEn: p.titleEn, image: p.images[0], price: p.price, size, color: color ? color[lang] : null }, qty);
   }
 
+  const chip = (on: boolean) =>
+    `min-w-12 rounded border px-3 py-2 text-sm transition-colors ${on ? "border-accent bg-accent text-white" : "border-line bg-surface hover:border-accent"}`;
+
   return (
-    <div className="mt-10 space-y-8">
+    <div className="mt-8 space-y-6">
       {p.colors.length > 0 ? (
         <fieldset>
-          <legend className="text-sm text-muted">
-            {t.color}: <span className="text-fg">{color?.[lang]}</span>
+          <legend className="mb-2 text-sm">
+            {t.color}: {color?.[lang]}
           </legend>
-          <div className="mt-3 flex gap-3">
+          <div className="flex gap-2">
             {p.colors.map((c, n) => (
               <button
                 key={c.hex + n}
@@ -46,9 +42,9 @@ export default function ProductBuy({ product: p, lang }: { product: ProductDTO; 
                 aria-label={c[lang]}
                 aria-pressed={n === colorIdx}
                 onClick={() => setColorIdx(n)}
-                className={`size-9 rounded-full border p-[3px] transition-colors ${n === colorIdx ? "border-fg" : "border-transparent hover:border-line"}`}
+                className={`size-9 rounded-full border-2 p-[3px] ${n === colorIdx ? "border-accent" : "border-transparent"}`}
               >
-                <span className="block size-full rounded-full border border-line/60" style={{ background: c.hex }} />
+                <span className="block size-full rounded-full border border-black/10" style={{ background: c.hex }} />
               </button>
             ))}
           </div>
@@ -57,8 +53,8 @@ export default function ProductBuy({ product: p, lang }: { product: ProductDTO; 
 
       {p.sizes.length > 0 ? (
         <fieldset>
-          <legend className="text-sm text-muted">{t.size}</legend>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <legend className="mb-2 text-sm">{t.size}</legend>
+          <div className="flex flex-wrap gap-2">
             {p.sizes.map((s) => (
               <button
                 key={s}
@@ -68,29 +64,41 @@ export default function ProductBuy({ product: p, lang }: { product: ProductDTO; 
                   setSize(s);
                   setNeedSize(false);
                 }}
-                className={`min-w-14 border px-4 py-3 text-sm transition-colors ${s === size ? "border-fg bg-fg text-bg" : "border-line hover:border-fg"}`}
+                className={chip(s === size)}
               >
                 {s}
               </button>
             ))}
           </div>
           {needSize ? (
-            <p role="alert" className="mt-3 text-sm text-red-600">
+            <p role="alert" className="mt-2 text-sm text-red-600">
               {t.chooseSize}
             </p>
           ) : null}
         </fieldset>
       ) : null}
 
-      <button
-        type="button"
-        onClick={onAdd}
-        disabled={soldOut}
-        className="w-full bg-fg py-5 text-sm text-bg transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {soldOut ? t.out : t.add}
-      </button>
-      {!soldOut && p.stock <= 5 ? <p className="text-center text-xs text-muted">{t.low}</p> : null}
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-stretch overflow-hidden rounded border border-accent bg-white text-black">
+          <button type="button" aria-label="+" onClick={() => setQty((q) => Math.min(10, q + 1))} className="h-[51px] w-[50px] bg-accent text-lg text-white">
+            +
+          </button>
+          <span aria-label={t.qty} className="grid w-[65px] place-items-center tabular-nums">
+            {qty}
+          </span>
+          <button type="button" aria-label="-" onClick={() => setQty((q) => Math.max(1, q - 1))} className="h-[51px] w-[50px] bg-accent text-lg text-white">
+            &minus;
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={onAdd}
+          disabled={soldOut}
+          className="h-[51px] bg-accent px-8 text-base text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {soldOut ? t.out : t.add}
+        </button>
+      </div>
     </div>
   );
 }

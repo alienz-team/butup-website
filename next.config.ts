@@ -7,6 +7,7 @@ const csp = [
   "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
   "font-src 'self' data:",
   "connect-src 'self'",
+  "frame-src https://www.openstreetmap.org",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

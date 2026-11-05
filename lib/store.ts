@@ -42,7 +42,7 @@ export const getCatalog = cache(async (): Promise<Catalog> => {
   try {
     const [cats, products] = await prisma.$transaction([
       prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
-      prisma.product.findMany({ where: { isActive: true }, orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }] }),
+      prisma.product.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }),
     ]);
     if (cats.length === 0) return fallback;
     return {
@@ -95,7 +95,7 @@ export async function getAdminData(): Promise<AdminData> {
   try {
     const [cats, products, orders] = await prisma.$transaction([
       prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
-      prisma.product.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.product.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
       prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
     ]);
     const list: AdminOrder[] = orders.map((o) => ({

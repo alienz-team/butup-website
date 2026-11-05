@@ -1,22 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Almarai, Amiri, Lemonada } from "next/font/google";
 import { cookies } from "next/headers";
 import { LANG_COOKIE, LOGO_URL, SITE_URL, THEME_COOKIE, type Lang, type Theme } from "@/lib/i18n";
 import "./globals.css";
 
-const plex = IBM_Plex_Sans_Arabic({
-  subsets: ["arabic", "latin"],
-  weight: ["200", "300", "400", "500"],
-  variable: "--font-plex",
-  display: "swap",
-});
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
-  display: "swap",
-});
+const almarai = Almarai({ subsets: ["arabic"], weight: ["300", "400", "700", "800"], variable: "--font-almarai", display: "swap" });
+const lemonada = Lemonada({ subsets: ["arabic", "latin"], variable: "--font-lemonada", display: "swap" });
+const amiri = Amiri({ subsets: ["arabic", "latin"], weight: ["400", "700"], variable: "--font-amiri", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -35,8 +25,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-    { media: "(prefers-color-scheme: light)", color: "#f9f9f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#000000" },
   ],
 };
 
@@ -49,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang={lang}
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className={`${plex.variable} ${cormorant.variable} ${theme === "dark" ? "dark" : ""}`}
+      className={`${almarai.variable} ${lemonada.variable} ${amiri.variable} ${theme === "dark" ? "dark" : ""}`}
       suppressHydrationWarning
     >
       <body className="min-h-dvh antialiased">{children}</body>

@@ -191,7 +191,7 @@ function ProductForm({ product: p, categories }: { product: ProductDTO | null; c
       <label className="text-sm md:col-span-2">
         Category
         <select name="categoryId" required defaultValue={p?.categoryId ?? categories[0]?.id} className={input}>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.nameEn}</option>)}
+          {categories.map((c) => <option key={c.id} value={c.id}>{c.parentId ? "- " : ""}{c.nameEn} | {c.nameAr}</option>)}
         </select>
       </label>
 
