@@ -14,90 +14,62 @@ enum Role {
 }
 
 enum OrderStatus {
-  NEW
+  PENDING
   CONFIRMED
   SHIPPED
   DELIVERED
-  CANCELLED
 }
 
 model Category {
-  slug          String        @id
-  nameAr        String
-  nameEn        String
-  image         String
-  sortOrder     Int           @default(0)
-  subCategories SubCategory[]
-  products      Product[]
-}
-
-model SubCategory {
-  slug         String    @id
-  categorySlug String
-  category     Category  @relation(fields: [categorySlug], references: [slug], onDelete: Cascade)
-  nameAr       String
-  nameEn       String
-  sortOrder    Int       @default(0)
-  products     Product[]
-
-  @@index([categorySlug])
+  id        String    @id @default(cuid())
+  nameAr    String
+  nameEn    String
+  slug      String    @unique
+  image     String
+  sortOrder Int       @default(0)
+  products  Product[]
 }
 
 model Product {
-  id           String       @id @default(cuid())
-  code         String       @unique
-  nameAr       String
-  nameEn       String
-  descAr       String       @default("")
-  descEn       String       @default("")
-  price        Int
-  oldPrice     Int?
-  images       String[]
-  sizes        String[]
+  id            String   @id @default(cuid())
+  titleAr       String
+  titleEn       String
+  slug          String   @unique
+  descriptionAr String   @default("")
+  descriptionEn String   @default("")
+  price         Float
+  compareAtPrice Float?
+  images        String[]
+  /// Variant options shown on the product page.
+  sizes         String[]
   /// [{ "ar": "ذهبي", "en": "Gold", "hex": "#C9AA71" }]
-  colors       Json         @default("[]")
-  stock        Int          @default(0)
-  featured     Boolean      @default(false)
-  active       Boolean      @default(true)
-  categorySlug String
-  category     Category     @relation(fields: [categorySlug], references: [slug])
-  subSlug      String?
-  subCategory  SubCategory? @relation(fields: [subSlug], references: [slug])
-  orderItems   OrderItem[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  colors        Json     @default("[]")
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id])
+  isFeatured    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  stock         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  @@index([categorySlug, active])
-  @@index([featured, active])
+  @@index([categoryId, isActive])
+  @@index([isFeatured, isActive])
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  number    String      @unique
-  status    OrderStatus @default(NEW)
-  total     Int
-  note      String?
-  items     OrderItem[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  number        String      @unique
+  customerName  String
+  customerPhone String
+  address       String
+  totalAmount   Float
+  status        OrderStatus @default(PENDING)
+  /// [{ "productId", "slug", "title", "size", "color", "qty", "unitPrice" }]
+  orderItems    Json
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@index([status, createdAt])
-}
-
-model OrderItem {
-  id          String  @id @default(cuid())
-  orderId     String
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String?
-  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  productCode String
-  productName String
-  size        String?
-  color       String?
-  qty         Int
-  unitPrice   Int
-
-  @@index([orderId])
 }
 
 model User {

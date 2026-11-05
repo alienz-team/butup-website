@@ -9,24 +9,16 @@ async function main() {
     await prisma.category.upsert({
       where: { slug: c.slug },
       update: { nameAr: c.nameAr, nameEn: c.nameEn, image: c.image, sortOrder: i },
-      create: { slug: c.slug, nameAr: c.nameAr, nameEn: c.nameEn, image: c.image, sortOrder: i },
+      create: { ...c, sortOrder: i },
     });
-    for (const [j, s] of c.subs.entries()) {
-      await prisma.subCategory.upsert({
-        where: { slug: s.slug },
-        update: { nameAr: s.nameAr, nameEn: s.nameEn, categorySlug: c.slug, sortOrder: j },
-        create: { slug: s.slug, nameAr: s.nameAr, nameEn: s.nameEn, categorySlug: c.slug, sortOrder: j },
-      });
-    }
   }
 
-  // Existing products keep any edits made in the dashboard; only missing ones are created.
+  // Seed products are refreshed from lib/catalog.ts (images, copy, price); stock is left as the dashboard set it.
   for (const p of SEED_PRODUCTS) {
-    const { id: _id, ...data } = p;
     await prisma.product.upsert({
-      where: { code: p.code },
-      update: {},
-      create: { ...data, colors: data.colors as unknown as object },
+      where: { slug: p.slug },
+      update: { titleAr: p.titleAr, titleEn: p.titleEn, descriptionAr: p.descriptionAr, descriptionEn: p.descriptionEn, price: p.price, compareAtPrice: p.compareAtPrice, images: p.images, sizes: p.sizes, colors: p.colors as unknown as object, categoryId: p.categoryId, isFeatured: p.isFeatured },
+      create: { ...p, colors: p.colors as unknown as object },
     });
   }
 

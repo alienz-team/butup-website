@@ -2,32 +2,33 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Quiet luxury: paper and ink. "gold" tokens are kept as names so admin/login classes keep working, but resolve to ink. */
 :root {
-  --bg: #fdfbf7;
+  --bg: #f9f9f9;
   --surface: #ffffff;
-  --surface-2: #f4eee3;
-  --line: #e7dfd0;
-  --fg: #1a1a1a;
-  --muted: #6b645a;
-  --gold: #b8975a;
-  --gold-ink: #7d5f26;
-  --on-gold: #1a1a1a;
-  --blush: #f3e3dc;
-  --overlay: rgba(20, 16, 12, 0.55);
+  --surface-2: #efeeec;
+  --line: #e3e1dd;
+  --fg: #0c0c0c;
+  --muted: #77736c;
+  --gold: #0c0c0c;
+  --gold-ink: #0c0c0c;
+  --on-gold: #f9f9f9;
+  --blush: #efeeec;
+  --glass: rgba(249, 249, 249, 0.72);
 }
 
 .dark {
   --bg: #0a0a0a;
-  --surface: #141311;
-  --surface-2: #1c1a16;
-  --line: #2b2822;
-  --fg: #f1ebdf;
-  --muted: #a69d8c;
-  --gold: #c9aa71;
-  --gold-ink: #d6b97f;
-  --on-gold: #14110a;
-  --blush: #1d1816;
-  --overlay: rgba(0, 0, 0, 0.6);
+  --surface: #121212;
+  --surface-2: #1a1a19;
+  --line: #262624;
+  --fg: #ecebe7;
+  --muted: #8f8b84;
+  --gold: #ecebe7;
+  --gold-ink: #ecebe7;
+  --on-gold: #0a0a0a;
+  --blush: #1a1a19;
+  --glass: rgba(10, 10, 10, 0.68);
 }
 
 @theme inline {
@@ -41,66 +42,69 @@
   --color-gold-ink: var(--gold-ink);
   --color-on-gold: var(--on-gold);
   --color-blush: var(--blush);
+  --color-glass: var(--glass);
   --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-cormorant), var(--font-amiri), Georgia, serif;
+  --font-display: var(--font-cormorant), var(--font-plex), Georgia, serif;
 }
 
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 4.5rem;
+  scroll-padding-top: 5rem;
 }
 
 body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
+  font-weight: 300;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 3px;
+/* Thin editorial display type. Arabic falls through to Plex at weight 200. */
+.display {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+}
+html[lang="ar"] .display {
+  font-weight: 200;
+  letter-spacing: 0;
+  line-height: 1.25;
 }
 
-/* Logo stays untouched; in dark mode it sits on a cream chip so the charcoal mark stays legible. */
+:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 4px;
+}
+
+/* Logo stays untouched; in dark mode it sits on a pale chip so the charcoal mark stays legible. */
 .logo-chip {
   display: inline-flex;
   align-items: center;
-  border-radius: 9999px;
-  padding: 0.2rem 0.55rem;
+  border-radius: 2px;
+  padding: 0.15rem 0.4rem;
 }
 .dark .logo-chip {
-  background: #fdfbf7;
+  background: #f9f9f9;
 }
 
-/* Tile zoom for the category bento and product cards */
-.zoom-img {
-  transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+.underline-link {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 1px;
+  transition: background-size 0.4s ease;
 }
-.zoom:hover .zoom-img,
-.zoom:focus-visible .zoom-img {
-  transform: scale(1.06);
+.underline-link:hover,
+.underline-link:focus-visible {
+  background-size: 100% 1px;
 }
-
-@keyframes drift {
-  from { transform: scale(1.02); }
-  to { transform: scale(1.1); }
-}
-.drift {
-  animation: drift 9s ease-out forwards;
-}
-
-@media (max-width: 767px) {
-  body { padding-bottom: 4.75rem; }
+html[dir="rtl"] .underline-link {
+  background-position: 100% 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .drift { animation: none; }
-  .zoom:hover .zoom-img { transform: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

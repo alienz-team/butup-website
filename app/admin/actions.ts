@@ -7,7 +7,7 @@ import type { Color } from "@/lib/catalog";
 import { prisma } from "@/lib/db";
 import { MAX_FILES, MAX_UPLOAD_BYTES, isAllowedImageUrl, storeImage } from "@/lib/upload";
 
-const ORDER_STATUSES = ["NEW", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
+const ORDER_STATUSES = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED"] as const;
 
 const str = (fd: FormData, k: string, max = 200) => String(fd.get(k) ?? "").trim().slice(0, max);
 const int = (fd: FormData, k: string, min = 0, max = 1_000_000) => {
@@ -55,19 +55,26 @@ function parseColors(raw: string): Color[] {
     });
 }
 
+const num = (fd: FormData, k: string) => {
+  const n = Number(fd.get(k));
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+};
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+
 export async function saveProduct(fd: FormData) {
   await assertAdmin();
   if (!prisma) return back("products", "no_db");
 
   const id = str(fd, "id", 40);
-  const code = str(fd, "code", 32).toUpperCase().replace(/[^A-Z0-9-]/g, "");
-  const nameAr = str(fd, "nameAr", 120);
-  const nameEn = str(fd, "nameEn", 120);
-  const categorySlug = str(fd, "categorySlug", 40);
-  if (!code || !nameAr || !nameEn || !categorySlug) return back("products", "missing_fields");
+  const titleAr = str(fd, "titleAr", 120);
+  const titleEn = str(fd, "titleEn", 120);
+  const categoryId = str(fd, "categoryId", 40);
+  const slug = slugify(str(fd, "slug", 80) || titleEn);
+  const price = num(fd, "price");
+  if (!titleAr || !titleEn || !categoryId || !slug || !price) return back("products", "missing_fields");
 
-  const subSlug = str(fd, "subSlug", 40) || null;
-  const oldPrice = int(fd, "oldPrice");
+  const compareAtPrice = num(fd, "compareAtPrice");
 
   // Keep the URLs the admin pasted (host-checked), then append validated uploads.
   const images = str(fd, "imageUrls", 4000)
@@ -87,18 +94,17 @@ export async function saveProduct(fd: FormData) {
   if (images.length === 0) return back("products", "need_image");
 
   const data = {
-    code,
-    nameAr,
-    nameEn,
-    descAr: str(fd, "descAr", 1000),
-    descEn: str(fd, "descEn", 1000),
-    price: int(fd, "price", 1),
-    oldPrice: oldPrice > 0 ? oldPrice : null,
+    titleAr,
+    titleEn,
+    slug,
+    descriptionAr: str(fd, "descriptionAr", 1500),
+    descriptionEn: str(fd, "descriptionEn", 1500),
+    price,
+    compareAtPrice: compareAtPrice > price ? compareAtPrice : null,
     stock: int(fd, "stock"),
-    featured: fd.get("featured") === "on",
-    active: fd.get("active") === "on",
-    categorySlug,
-    subSlug,
+    isFeatured: fd.get("isFeatured") === "on",
+    isActive: fd.get("isActive") === "on",
+    categoryId,
     images: images.slice(0, 10),
     sizes: str(fd, "sizes", 200).split(",").map((s) => s.trim()).filter(Boolean).slice(0, 12),
     colors: parseColors(str(fd, "colors", 1200)) as unknown as object,

@@ -13,49 +13,41 @@ type ProductRow = NonNullable<Awaited<ReturnType<NonNullable<typeof prisma>["pro
 
 const toProduct = (r: ProductRow): ProductDTO => ({
   id: r.id,
-  code: r.code,
-  nameAr: r.nameAr,
-  nameEn: r.nameEn,
-  descAr: r.descAr,
-  descEn: r.descEn,
+  slug: r.slug,
+  titleAr: r.titleAr,
+  titleEn: r.titleEn,
+  descriptionAr: r.descriptionAr,
+  descriptionEn: r.descriptionEn,
   price: r.price,
-  oldPrice: r.oldPrice,
+  compareAtPrice: r.compareAtPrice,
   images: r.images,
   sizes: r.sizes,
   colors: Array.isArray(r.colors) ? (r.colors as unknown as Color[]) : [],
+  categoryId: r.categoryId,
+  isFeatured: r.isFeatured,
+  isActive: r.isActive,
   stock: r.stock,
-  featured: r.featured,
-  active: r.active,
-  categorySlug: r.categorySlug,
-  subSlug: r.subSlug,
 });
 
 export type Catalog = { categories: CategoryDTO[]; products: ProductDTO[]; live: boolean };
 
 /**
- * One batched round-trip for the whole storefront catalog. Any failure (no
- * DATABASE_URL, unreachable DB, empty tables) returns the seed data so the
- * site renders the same before and after the database is connected.
+ * One sequential round-trip for the whole storefront catalog (never Promise.all against the pooler).
+ * Any failure (no DATABASE_URL, unreachable DB, empty tables) returns the seed data so the site
+ * renders the same before and after the database is connected.
  */
 export const getCatalog = cache(async (): Promise<Catalog> => {
   const fallback: Catalog = { categories: SEED_CATEGORIES, products: SEED_PRODUCTS, live: false };
   if (!prisma) return fallback;
   try {
-    const [cats, subs, products] = await prisma.$transaction([
+    const [cats, products] = await prisma.$transaction([
       prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
-      prisma.subCategory.findMany({ orderBy: { sortOrder: "asc" } }),
-      prisma.product.findMany({ where: { active: true }, orderBy: [{ featured: "desc" }, { createdAt: "desc" }] }),
+      prisma.product.findMany({ where: { isActive: true }, orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }] }),
     ]);
     if (cats.length === 0) return fallback;
     return {
       live: true,
-      categories: cats.map((c) => ({
-        slug: c.slug,
-        nameAr: c.nameAr,
-        nameEn: c.nameEn,
-        image: c.image,
-        subs: subs.filter((s) => s.categorySlug === c.slug).map((s) => ({ slug: s.slug, nameAr: s.nameAr, nameEn: s.nameEn })),
-      })),
+      categories: cats.map(({ sortOrder: _s, ...c }) => c),
       products: products.map(toProduct),
     };
   } catch (err) {
@@ -64,40 +56,73 @@ export const getCatalog = cache(async (): Promise<Catalog> => {
   }
 });
 
+export type OrderLine = {
+  productId: string;
+  slug: string;
+  title: string;
+  size: string | null;
+  color: string | null;
+  qty: number;
+  unitPrice: number;
+};
+
+export type AdminOrder = {
+  id: string;
+  number: string;
+  status: string;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  totalAmount: number;
+  createdAt: Date;
+  orderItems: OrderLine[];
+};
+
 export type AdminData = {
   live: boolean;
   categories: CategoryDTO[];
   products: ProductDTO[];
-  orders: {
-    id: string;
-    number: string;
-    status: string;
-    total: number;
-    note: string | null;
-    createdAt: Date;
-    items: { id: string; productCode: string; productName: string; size: string | null; color: string | null; qty: number; unitPrice: number }[];
-  }[];
+  orders: AdminOrder[];
+  stats: { revenue: number; orderCount: number; pending: number; lowStock: number };
 };
+
+const emptyStats = { revenue: 0, orderCount: 0, pending: 0, lowStock: 0 };
 
 /** Admin sees inactive products too and every order. */
 export async function getAdminData(): Promise<AdminData> {
-  if (!prisma) return { live: false, categories: SEED_CATEGORIES, products: SEED_PRODUCTS, orders: [] };
+  const fallback: AdminData = { live: false, categories: SEED_CATEGORIES, products: SEED_PRODUCTS, orders: [], stats: emptyStats };
+  if (!prisma) return fallback;
   try {
-    const [cats, subs, products, orders] = await prisma.$transaction([
+    const [cats, products, orders] = await prisma.$transaction([
       prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
-      prisma.subCategory.findMany({ orderBy: { sortOrder: "asc" } }),
       prisma.product.findMany({ orderBy: { createdAt: "desc" } }),
-      prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 100, include: { items: true } }),
+      prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
     ]);
-    const categories = cats.length
-      ? cats.map((c) => ({
-          slug: c.slug, nameAr: c.nameAr, nameEn: c.nameEn, image: c.image,
-          subs: subs.filter((s) => s.categorySlug === c.slug).map((s) => ({ slug: s.slug, nameAr: s.nameAr, nameEn: s.nameEn })),
-        }))
-      : SEED_CATEGORIES;
-    return { live: true, categories, products: products.map(toProduct), orders };
+    const list: AdminOrder[] = orders.map((o) => ({
+      id: o.id,
+      number: o.number,
+      status: o.status,
+      customerName: o.customerName,
+      customerPhone: o.customerPhone,
+      address: o.address,
+      totalAmount: o.totalAmount,
+      createdAt: o.createdAt,
+      orderItems: Array.isArray(o.orderItems) ? (o.orderItems as unknown as OrderLine[]) : [],
+    }));
+    return {
+      live: true,
+      categories: cats.length ? cats.map(({ sortOrder: _s, ...c }) => c) : SEED_CATEGORIES,
+      products: products.map(toProduct),
+      orders: list,
+      stats: {
+        revenue: list.filter((o) => o.status !== "PENDING").reduce((s, o) => s + o.totalAmount, 0),
+        orderCount: list.length,
+        pending: list.filter((o) => o.status === "PENDING").length,
+        lowStock: products.filter((p) => p.stock <= 3).length,
+      },
+    };
   } catch (err) {
     console.error("getAdminData failed", err);
-    return { live: false, categories: SEED_CATEGORIES, products: SEED_PRODUCTS, orders: [] };
+    return fallback;
   }
 }

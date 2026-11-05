@@ -2,43 +2,56 @@ export type Color = { ar: string; en: string; hex: string };
 
 export type ProductDTO = {
   id: string;
-  code: string;
-  nameAr: string;
-  nameEn: string;
-  descAr: string;
-  descEn: string;
+  slug: string;
+  titleAr: string;
+  titleEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
   price: number;
-  oldPrice: number | null;
+  compareAtPrice: number | null;
   images: string[];
   sizes: string[];
   colors: Color[];
+  categoryId: string;
+  isFeatured: boolean;
+  isActive: boolean;
   stock: number;
-  featured: boolean;
-  active: boolean;
-  categorySlug: string;
-  subSlug: string | null;
 };
 
-export type SubCategoryDTO = { slug: string; nameAr: string; nameEn: string };
 export type CategoryDTO = {
+  id: string;
   slug: string;
   nameAr: string;
   nameEn: string;
   image: string;
-  subs: SubCategoryDTO[];
 };
+
+/** Picks the Arabic or English field of any bilingual record (`title`, `name`, `description`). */
+export function pick<T extends Record<string, unknown>>(o: T, base: string, lang: "ar" | "en"): string {
+  const key = `${base}${lang === "ar" ? "Ar" : "En"}`;
+  return String(o[key] ?? "");
+}
 
 export const img = (id: string, w = 1600) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=85`;
 
-// Every id below was opened and checked by eye. Several ids from the brief were wrong
-// (404, a wine bottle, a floral shoe, branded Chanel bottles) so they are replaced with
-// unbranded equivalents.
+
+
+// Photography style: editorial fashion models and lifestyle portraits for clothing and accessories,
+// clean product shots for bags and fragrance. Every id below was opened and checked by eye.
 export const PHOTO = {
-  denimDress: "1591369822096-ffd140ec948f",
-  maroonDress: "1585487000160-6ebcfceb0d03",
-  blushTrousers: "1594633312681-425c7b97ccd1",
-  clothesRail: "1490481651871-ab68de25d43d",
+  // Models
+  scarfKimono: "1752074210484-768a39e3c033",
+  silkBlouse: "1770294758906-c8762abb2c8b",
+  knitSweater: "1759229874914-c1ffdb3ebd0c",
+  beigeAbaya: "1760083545495-b297b1690672",
+  coatStairs: "1762605135012-56a59a059e60",
+  camelCoatHat: "1653875842174-429c1b467548",
+  blackMaxi: "1668028554553-f83cac89ce0f",
+  creamBlazer: "1571513722275-4b41940f54b8",
+  goldNecklace: "1589713680561-1d0b6945a582",
+  // Products and flat lays
+  bootsFlatlay: "1516762689617-e1cffcef479d",
   bagLeather: "1590874103328-eac38a683ce7",
   bagSatchel: "1605733513597-a8f8341084e6",
   perfumeGold: "1588405748880-12d1d2a59f75",
@@ -53,181 +66,139 @@ export const PHOTO = {
   crystal: "1573408301185-9146fe634ad0",
 } as const;
 
+export const HERO_IMAGES = [img(PHOTO.coatStairs, 2400), img(PHOTO.blackMaxi, 2400), img(PHOTO.creamBlazer, 2400)];
+
 export const SEED_CATEGORIES: CategoryDTO[] = [
+  { id: "cat_clothing", slug: "clothing", nameAr: "ملابس", nameEn: "Clothing", image: img(PHOTO.camelCoatHat) },
+  { id: "cat_shoes_bags", slug: "shoes-bags", nameAr: "أحذية وحقائب", nameEn: "Shoes & Bags", image: img(PHOTO.goldNecklace) },
+  { id: "cat_beauty", slug: "beauty", nameAr: "التجميل والعطور", nameEn: "Beauty & Perfumes", image: img(PHOTO.perfumeGold) },
+];
+
+const SIZES = ["S", "M", "L", "XL"];
+const NEUTRALS: Color[] = [
+  { ar: "أسود", en: "Black", hex: "#1A1A1A" },
+  { ar: "بيج", en: "Sand", hex: "#CDBFA9" },
+];
+
+type Seed = Omit<ProductDTO, "isActive" | "images"> & { photos: (keyof typeof PHOTO)[] };
+
+const SEEDS: Seed[] = [
   {
-    slug: "clothing",
-    nameAr: "ملابس",
-    nameEn: "Clothing",
-    image: img(PHOTO.denimDress),
-    subs: [
-      { slug: "dresses", nameAr: "فساتين", nameEn: "Dresses" },
-      { slug: "lingerie", nameAr: "ملابس داخلية", nameEn: "Lingerie" },
-    ],
+    id: "p_beige-knit-sweater", slug: "beige-knit-sweater", categoryId: "cat_clothing",
+    titleAr: "كنزة تريكو بيج", titleEn: "Beige Knit Sweater",
+    descriptionAr: "كنزة من التريكو الناعم بقصة مريحة ولون بيج هادئ، تناسب الإطلالات اليومية.",
+    descriptionEn: "A soft knit sweater in a quiet beige with a relaxed fit, made for everyday elegance.",
+    price: 185, compareAtPrice: 220, sizes: SIZES, colors: [{ ar: "بيج", en: "Sand", hex: "#CDBFA9" }], stock: 14, isFeatured: true,
+    photos: ["knitSweater", "silkBlouse", "camelCoatHat"],
   },
   {
-    slug: "shoes-bags",
-    nameAr: "أحذية وحقائب",
-    nameEn: "Shoes & Bags",
-    image: img(PHOTO.bagLeather),
-    subs: [
-      { slug: "shoes", nameAr: "أحذية", nameEn: "Shoes" },
-      { slug: "bags", nameAr: "حقائب", nameEn: "Bags" },
-    ],
+    id: "p_silk-sleeveless-blouse", slug: "silk-sleeveless-blouse", categoryId: "cat_clothing",
+    titleAr: "بلوزة حرير بلا أكمام", titleEn: "Silk Sleeveless Blouse",
+    descriptionAr: "بلوزة من الحرير الناعم بياقة كلاسيكية وأزرار لؤلؤية، قطعة أساسية لكل خزانة.",
+    descriptionEn: "A fluid silk blouse with a classic collar and pearl buttons, a wardrobe essential.",
+    price: 210, compareAtPrice: null, sizes: SIZES, colors: [{ ar: "عاجي", en: "Ivory", hex: "#F3EFE6" }], stock: 18, isFeatured: true,
+    photos: ["silkBlouse", "creamBlazer", "knitSweater"],
   },
   {
-    slug: "beauty",
-    nameAr: "التجميل والعطور",
-    nameEn: "Beauty & Perfumes",
-    image: img(PHOTO.skincareDisplay),
-    subs: [
-      { slug: "skincare", nameAr: "التجميل والعناية بالبشرة", nameEn: "Skincare" },
-      { slug: "perfumes", nameAr: "العطور", nameEn: "Perfumes" },
-    ],
+    id: "p_black-maxi-dress", slug: "black-maxi-dress", categoryId: "cat_clothing",
+    titleAr: "فستان ماكسي أسود", titleEn: "Black Maxi Dress",
+    descriptionAr: "فستان طويل بأكمام واسعة وقماش منساب، إطلالة سهرة محتشمة وراقية.",
+    descriptionEn: "A floor-length dress with full sleeves and a fluid drape, a modest and refined evening look.",
+    price: 360, compareAtPrice: null, sizes: SIZES, colors: [{ ar: "أسود", en: "Black", hex: "#1A1A1A" }], stock: 8, isFeatured: true,
+    photos: ["blackMaxi", "scarfKimono", "beigeAbaya"],
   },
   {
-    slug: "accessories",
-    nameAr: "اكسسوارات",
-    nameEn: "Accessories",
-    image: img(PHOTO.pearls),
-    subs: [],
+    id: "p_cream-tuxedo-blazer", slug: "cream-tuxedo-blazer", categoryId: "cat_clothing",
+    titleAr: "بليزر كريمي بياقة ساتان", titleEn: "Cream Tuxedo Blazer",
+    descriptionAr: "بليزر بقصة مهيكلة ولون كريمي وياقة بتفاصيل ساتان، للمناسبات والعمل.",
+    descriptionEn: "A structured blazer in cream with a contrast lapel, for occasions and the office.",
+    price: 320, compareAtPrice: 380, sizes: SIZES, colors: [{ ar: "كريمي", en: "Cream", hex: "#EFE6D2" }], stock: 10, isFeatured: false,
+    photos: ["creamBlazer", "silkBlouse", "coatStairs"],
+  },
+  {
+    id: "p_embroidered-beige-abaya", slug: "embroidered-beige-abaya", categoryId: "cat_clothing",
+    titleAr: "عباية بيج مطرزة", titleEn: "Embroidered Beige Abaya",
+    descriptionAr: "عباية بقصة واسعة منسدلة وتطريز ناعم على الأكمام والخصر مع حزام.",
+    descriptionEn: "A flowing abaya with soft embroidery at the sleeves and waist, finished with a belt.",
+    price: 410, compareAtPrice: null, sizes: ["52", "54", "56", "58"], colors: [{ ar: "بيج", en: "Sand", hex: "#E3CBB8" }], stock: 12, isFeatured: true,
+    photos: ["beigeAbaya", "coatStairs", "scarfKimono"],
+  },
+  {
+    id: "p_taupe-belted-abaya", slug: "taupe-belted-abaya", categoryId: "cat_clothing",
+    titleAr: "عباية مفتوحة بحزام", titleEn: "Taupe Belted Abaya",
+    descriptionAr: "عباية مفتوحة بلون ترابي وحزام رفيع وأكمام بتفاصيل أنيقة.",
+    descriptionEn: "An open-front abaya in taupe with a slim belt and finely detailed sleeves.",
+    price: 395, compareAtPrice: 450, sizes: ["52", "54", "56", "58"], colors: [{ ar: "ترابي", en: "Taupe", hex: "#A38A72" }], stock: 9, isFeatured: false,
+    photos: ["coatStairs", "beigeAbaya", "camelCoatHat"],
+  },
+  {
+    id: "p_camel-wool-coat", slug: "camel-wool-coat", categoryId: "cat_clothing",
+    titleAr: "معطف صوف جملي", titleEn: "Camel Wool Coat",
+    descriptionAr: "معطف طويل من الصوف بلون جملي كلاسيكي، دافئ وخفيف على الكتفين.",
+    descriptionEn: "A long wool coat in classic camel, warm yet light on the shoulders.",
+    price: 480, compareAtPrice: null, sizes: SIZES, colors: [{ ar: "جملي", en: "Camel", hex: "#C19A6B" }], stock: 7, isFeatured: false,
+    photos: ["camelCoatHat", "knitSweater", "coatStairs"],
+  },
+  {
+    id: "p_gold-layered-necklace", slug: "gold-layered-necklace", categoryId: "cat_shoes_bags",
+    titleAr: "عقد ذهبي متعدد الطبقات", titleEn: "Gold Layered Necklace",
+    descriptionAr: "عقدان رفيعان بلمعة ذهبية ناعمة يُلبسان معاً أو منفصلين.",
+    descriptionEn: "Two fine gold chains that layer together or stand alone.",
+    price: 130, compareAtPrice: 160, sizes: [], colors: [{ ar: "ذهبي", en: "Gold", hex: "#C9AA71" }], stock: 25, isFeatured: true,
+    photos: ["goldNecklace", "hoops", "pearls"],
+  },
+  {
+    id: "p_structured-leather-bag", slug: "structured-leather-bag", categoryId: "cat_shoes_bags",
+    titleAr: "حقيبة جلدية مهيكلة", titleEn: "Structured Leather Bag",
+    descriptionAr: "حقيبة يد بجلد مهيكل وبطانة داخلية ناعمة، بتفاصيل ذهبية هادئة.",
+    descriptionEn: "A structured leather handbag with a soft lining and quiet gold hardware.",
+    price: 340, compareAtPrice: null, sizes: [], colors: [{ ar: "بني", en: "Tan", hex: "#8A5A36" }, { ar: "أسود", en: "Black", hex: "#1A1A1A" }], stock: 9, isFeatured: true,
+    photos: ["bagLeather", "bagSatchel", "bootsFlatlay"],
+  },
+  {
+    id: "p_everyday-satchel", slug: "everyday-satchel", categoryId: "cat_shoes_bags",
+    titleAr: "حقيبة ساتشل يومية", titleEn: "Everyday Satchel",
+    descriptionAr: "حقيبة كتف عملية بمساحة واسعة وقفل معدني، لكل يوم.",
+    descriptionEn: "A practical shoulder satchel with generous space and a metal clasp, for every day.",
+    price: 285, compareAtPrice: 320, sizes: [], colors: NEUTRALS, stock: 12, isFeatured: false,
+    photos: ["bagSatchel", "bagLeather", "pearls"],
+  },
+  {
+    id: "p_suede-heeled-boots", slug: "suede-heeled-boots", categoryId: "cat_shoes_bags",
+    titleAr: "بوت كعب سويدي", titleEn: "Suede Heeled Boots",
+    descriptionAr: "بوت قصير من السويد بكعب متوسط ولون جملي يناسب الشتاء.",
+    descriptionEn: "Short suede boots with a mid heel in a camel tone, made for cooler days.",
+    price: 270, compareAtPrice: null, sizes: ["37", "38", "39", "40"], colors: [{ ar: "جملي", en: "Camel", hex: "#C19A6B" }], stock: 10, isFeatured: false,
+    photos: ["bootsFlatlay", "heels", "bagLeather"],
+  },
+  {
+    id: "p_amber-oud-perfume", slug: "amber-oud-perfume", categoryId: "cat_beauty",
+    titleAr: "عطر العنبر والعود", titleEn: "Amber & Oud Perfume",
+    descriptionAr: "عطر شرقي دافئ بقلب من العنبر والعود وخاتمة ناعمة من الفانيلا.",
+    descriptionEn: "A warm Eastern fragrance with an amber and oud heart and a soft vanilla finish.",
+    price: 320, compareAtPrice: 380, sizes: ["50ml", "100ml"], colors: [], stock: 18, isFeatured: true,
+    photos: ["perfumeGold", "perfumeOrange", "crystal"],
+  },
+  {
+    id: "p_citrus-musk-perfume", slug: "citrus-musk-perfume", categoryId: "cat_beauty",
+    titleAr: "عطر الحمضيات والمسك", titleEn: "Citrus Musk Perfume",
+    descriptionAr: "عطر منعش يجمع الحمضيات اللامعة مع مسك نظيف يدوم.",
+    descriptionEn: "A fresh scent pairing bright citrus with a clean, lasting musk.",
+    price: 280, compareAtPrice: null, sizes: ["50ml", "100ml"], colors: [], stock: 22, isFeatured: false,
+    photos: ["perfumeOrange", "perfumeGold", "makeupMarble"],
+  },
+  {
+    id: "p_daily-skincare-set", slug: "daily-skincare-set", categoryId: "cat_beauty",
+    titleAr: "مجموعة العناية اليومية بالبشرة", titleEn: "Daily Skincare Set",
+    descriptionAr: "مجموعة من ثلاث خطوات لترطيب البشرة وإشراقتها كل يوم.",
+    descriptionEn: "A three-step routine for hydrated, glowing skin every day.",
+    price: 230, compareAtPrice: 270, sizes: [], colors: [], stock: 25, isFeatured: false,
+    photos: ["skincareDisplay", "skincareFlatlay", "skincareTube"],
   },
 ];
 
-const C = {
-  black: { ar: "أسود", en: "Black", hex: "#1A1A1A" },
-  ivory: { ar: "عاجي", en: "Ivory", hex: "#F3EBDD" },
-  blush: { ar: "وردي فاتح", en: "Blush", hex: "#E8C9C0" },
-  gold: { ar: "ذهبي", en: "Gold", hex: "#C9AA71" },
-  wine: { ar: "عنابي", en: "Wine", hex: "#6E1F34" },
-  navy: { ar: "كحلي", en: "Navy", hex: "#1F2A44" },
-  tan: { ar: "جملي", en: "Tan", hex: "#B5834F" },
-  nude: { ar: "بيج", en: "Nude", hex: "#D9BFA4" },
-  denim: { ar: "أزرق جينز", en: "Denim", hex: "#6F8FB3" },
-};
-
-type Seed = Omit<ProductDTO, "id" | "active" | "images"> & { photos: string[] };
-
-const seed = ({ photos, ...rest }: Seed): ProductDTO => ({
-  ...rest,
-  id: rest.code,
-  active: true,
-  images: photos.map((p) => img(p)),
-});
-
-export const SEED_PRODUCTS: ProductDTO[] = [
-  seed({
-    code: "BU-1001", nameAr: "ملابس داخلية 3 قطع", nameEn: "Lingerie set, 3 pieces",
-    descAr: "طقم ملابس داخلية ناعم من قماش قطني مريح، ثلاث قطع بألوان هادئة.",
-    descEn: "A soft cotton lingerie set of three pieces in quiet tones.",
-    price: 70, oldPrice: null, photos: [PHOTO.blushTrousers, PHOTO.clothesRail],
-    sizes: ["S", "M", "L", "XL"], colors: [C.blush, C.ivory, C.black], stock: 40, featured: true,
-    categorySlug: "clothing", subSlug: "lingerie",
-  }),
-  seed({
-    code: "BU-1002", nameAr: "ملابس داخلية 7 قطع", nameEn: "Lingerie set, 7 pieces",
-    descAr: "عرض التوفير: سبع قطع من الملابس الداخلية القطنية لكل يوم من الأسبوع.",
-    descEn: "The value pack: seven cotton pieces, one for every day of the week.",
-    price: 100, oldPrice: 140, photos: [PHOTO.clothesRail, PHOTO.blushTrousers],
-    sizes: ["S", "M", "L", "XL"], colors: [C.nude, C.black], stock: 25, featured: true,
-    categorySlug: "clothing", subSlug: "lingerie",
-  }),
-  seed({
-    code: "BU-1003", nameAr: "فستان جينز بأزرار", nameEn: "Buttoned denim dress",
-    descAr: "فستان بقصة واسعة وأزرار أمامية، مريح للنهار ويسهل تنسيقه لإطلالة محتشمة.",
-    descEn: "A relaxed button-front dress for daytime, easy to layer for a modest look.",
-    price: 185, oldPrice: 220, photos: [PHOTO.denimDress, PHOTO.maroonDress],
-    sizes: ["S", "M", "L", "XL"], colors: [C.denim], stock: 14, featured: true,
-    categorySlug: "clothing", subSlug: "dresses",
-  }),
-  seed({
-    code: "BU-1004", nameAr: "فستان قطيفة عنابي", nameEn: "Wine corduroy dress",
-    descAr: "فستان طويل بأكمام كاملة من قماش قطيفة ناعم، بلون عنابي دافئ.",
-    descEn: "A full-length corduroy dress with long sleeves in a warm wine shade.",
-    price: 240, oldPrice: null, photos: [PHOTO.maroonDress, PHOTO.denimDress],
-    sizes: ["S", "M", "L"], colors: [C.wine, C.navy], stock: 9, featured: true,
-    categorySlug: "clothing", subSlug: "dresses",
-  }),
-  seed({
-    code: "BU-1005", nameAr: "بنطال واسع ناعم", nameEn: "Soft wide-leg trousers",
-    descAr: "بنطال بقماش ناعم الملمس وقصة واسعة مع شريط مطاطي عند الكاحل.",
-    descEn: "Soft-drape trousers with a wide cut and gathered ankle.",
-    price: 130, oldPrice: null, photos: [PHOTO.blushTrousers],
-    sizes: ["S", "M", "L"], colors: [C.blush, C.ivory], stock: 18, featured: false,
-    categorySlug: "clothing", subSlug: "dresses",
-  }),
-  seed({
-    code: "BU-2001", nameAr: "حقيبة يد مضفرة", nameEn: "Woven top-handle bag",
-    descAr: "حقيبة يد مضفرة بمقبض علوي وغطاء من الجلد الصناعي، خفيفة وأنيقة للنهار.",
-    descEn: "A woven top-handle bag with a vegan-leather flap, light and elegant for daytime.",
-    price: 320, oldPrice: 380, photos: [PHOTO.bagLeather],
-    sizes: [], colors: [C.tan], stock: 8, featured: true,
-    categorySlug: "shoes-bags", subSlug: "bags",
-  }),
-  seed({
-    code: "BU-2002", nameAr: "حقيبة ساتشل جلدية", nameEn: "Leather satchel bag",
-    descAr: "حقيبة ساتشل بإغلاق مزدوج وحزام كتف قابل للتعديل، تتسع لأغراضك اليومية.",
-    descEn: "A satchel with double buckle closure and an adjustable strap for everyday essentials.",
-    price: 280, oldPrice: null, photos: [PHOTO.bagSatchel],
-    sizes: [], colors: [{ ar: "رمادي", en: "Grey", hex: "#8A8A8E" }], stock: 12, featured: true,
-    categorySlug: "shoes-bags", subSlug: "bags",
-  }),
-  seed({
-    code: "BU-2004", nameAr: "حذاء كعب كلاسيكي", nameEn: "Classic pointed heels",
-    descAr: "حذاء بكعب متوسط ومقدمة مدببة بلون عاجي يناسب كل الإطلالات.",
-    descEn: "Mid-height pointed pumps in ivory that go with every look.",
-    price: 195, oldPrice: null, photos: [PHOTO.heels],
-    sizes: ["36", "37", "38", "39", "40", "41"], colors: [C.ivory, C.black], stock: 20, featured: true,
-    categorySlug: "shoes-bags", subSlug: "shoes",
-  }),
-  seed({
-    code: "BU-3001", nameAr: "عطر عود وعنبر", nameEn: "Oud & amber eau de parfum",
-    descAr: "عطر شرقي دافئ بنوتات العود والعنبر والفانيلا، ثبات يدوم طوال اليوم.",
-    descEn: "A warm Eastern fragrance of oud, amber and vanilla with all-day wear.",
-    price: 260, oldPrice: 310, photos: [PHOTO.perfumeGold, PHOTO.perfumeOrange],
-    sizes: ["50ml", "100ml"], colors: [], stock: 22, featured: true,
-    categorySlug: "beauty", subSlug: "perfumes",
-  }),
-  seed({
-    code: "BU-3002", nameAr: "عطر زهري برتقالي", nameEn: "Orange blossom eau de parfum",
-    descAr: "عطر زهري منعش بنفحات الحمضيات وزهر البرتقال.",
-    descEn: "A fresh floral with citrus and orange blossom.",
-    price: 230, oldPrice: null, photos: [PHOTO.perfumeOrange],
-    sizes: ["50ml", "100ml"], colors: [], stock: 16, featured: false,
-    categorySlug: "beauty", subSlug: "perfumes",
-  }),
-  seed({
-    code: "BU-3003", nameAr: "مجموعة العناية بالبشرة", nameEn: "Daily skincare set",
-    descAr: "مجموعة عناية يومية بتركيبات لطيفة: منظف، سيروم وكريم مرطب.",
-    descEn: "A gentle daily routine: cleanser, serum and moisturiser.",
-    price: 150, oldPrice: 180, photos: [PHOTO.skincareFlatlay, PHOTO.skincareTube],
-    sizes: [], colors: [], stock: 30, featured: true,
-    categorySlug: "beauty", subSlug: "skincare",
-  }),
-  seed({
-    code: "BU-3004", nameAr: "باليت مكياج", nameEn: "Makeup essentials palette",
-    descAr: "باليت ألوان ترابية مع بودرة وأحمر خدود لإطلالة ناعمة.",
-    descEn: "Earthy shades with powder and blush for a soft finish.",
-    price: 120, oldPrice: null, photos: [PHOTO.makeupMarble, PHOTO.skincareDisplay],
-    sizes: [], colors: [], stock: 3, featured: false,
-    categorySlug: "beauty", subSlug: "skincare",
-  }),
-  seed({
-    code: "BU-4001", nameAr: "حلق ذهبي دائري", nameEn: "Gold chunky hoops",
-    descAr: "حلق دائري بتصميم ملتوي مطلي بالذهب، خفيف ولا يسبب حساسية.",
-    descEn: "Twisted gold-plated hoops, lightweight and skin-friendly.",
-    price: 65, oldPrice: null, photos: [PHOTO.hoops, PHOTO.crystal],
-    sizes: [], colors: [C.gold], stock: 35, featured: true,
-    categorySlug: "accessories", subSlug: null,
-  }),
-  seed({
-    code: "BU-4002", nameAr: "عقد لؤلؤ", nameEn: "Pearl necklace",
-    descAr: "عقد لؤلؤ كلاسيكي بقفل ذهبي، يضيف لمسة راقية لأي إطلالة.",
-    descEn: "A classic pearl strand with a gold clasp.",
-    price: 110, oldPrice: 140, photos: [PHOTO.pearls, PHOTO.crystal],
-    sizes: [], colors: [C.ivory], stock: 11, featured: true,
-    categorySlug: "accessories", subSlug: null,
-  }),
-];
-
-export const pick = (item: { nameAr: string; nameEn: string }, lang: "ar" | "en") =>
-  lang === "ar" ? item.nameAr : item.nameEn;
+export const SEED_PRODUCTS: ProductDTO[] = SEEDS.map(({ photos, ...p }) => ({
+  ...p,
+  isActive: true,
+  images: photos.map((k) => img(PHOTO[k])),
+}));

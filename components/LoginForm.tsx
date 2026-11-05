@@ -12,15 +12,15 @@ export default function LoginForm({ lang }: { lang: Lang }) {
     locked: t.locked,
     not_configured: t.not_configured,
   };
-  const field = "mt-1 w-full rounded-lg border border-line bg-surface px-4 py-3 outline-none focus:border-gold";
+  const field = "mt-1 w-full border-b border-line bg-transparent py-2 text-base outline-none focus:border-fg";
 
   return (
-    <form action={action} className="mt-6 space-y-4">
-      <label className="block text-sm">
+    <form action={action} className="mt-8 space-y-6">
+      <label className="block text-sm text-muted">
         {t.email}
         <input name="email" type="email" required autoComplete="username" className={field} dir="ltr" />
       </label>
-      <label className="block text-sm">
+      <label className="block text-sm text-muted">
         {t.password}
         <input name="password" type="password" required autoComplete="current-password" className={field} dir="ltr" />
       </label>
@@ -29,7 +29,7 @@ export default function LoginForm({ lang }: { lang: Lang }) {
           {messages[error] ?? t.failed}
         </p>
       ) : null}
-      <button disabled={pending} className="w-full rounded-full bg-gold py-3 font-medium text-on-gold disabled:opacity-60">
+      <button disabled={pending} className="w-full bg-fg py-3.5 text-sm text-bg transition-opacity hover:opacity-85 disabled:opacity-50">
         {pending ? t.pending : t.submit}
       </button>
     </form>

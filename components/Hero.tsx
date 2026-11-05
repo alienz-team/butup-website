@@ -1,36 +1,61 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { dict, type Lang } from "@/lib/i18n";
 
-const HERO_IMAGE = "https://images.cdn-files-a.com/ready_uploads/media/8900825/2000_6373f3039b134.jpg";
+/** Full-screen opening: images cross-fade slowly while the wordmark rises into place once. */
+export default function Hero({ lang, images }: { lang: Lang; images: string[] }) {
+  const t = dict[lang];
+  const [i, setI] = useState(0);
 
-export default function Hero({ lang }: { lang: Lang }) {
-  const t = dict[lang].hero;
+  useEffect(() => {
+    if (images.length < 2) return;
+    const id = setInterval(() => setI((n) => (n + 1) % images.length), 6500);
+    return () => clearInterval(id);
+  }, [images.length]);
 
   return (
-    <section id="top" className="relative isolate h-[86svh] min-h-[520px] w-full overflow-hidden bg-[#1a1612] text-white">
-      <Image src={HERO_IMAGE} alt={t.alt} fill sizes="100vw" quality={85} priority className="object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/30" />
+    <section className="relative h-[calc(100svh-4rem)] min-h-[560px] w-full overflow-hidden bg-[#161514] text-[#f5f3ef] md:h-[calc(100svh-72px)]">
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={i}
+          className="absolute inset-0"
+          initial={{ opacity: 0, scale: 1.08 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ opacity: { duration: 1.8 }, scale: { duration: 9, ease: "easeOut" } }}
+        >
+          <Image src={images[i]} alt="" fill priority={i === 0} sizes="100vw" quality={85} className="object-cover object-[center_28%]" />
+        </motion.div>
+      </AnimatePresence>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/25" aria-hidden />
 
-      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-16 md:px-8 md:pb-20">
-        <h1 dir="ltr" className="font-display text-[3.4rem] leading-[1.1] font-medium md:text-8xl">
-          {t.title}
-        </h1>
-        <p className="mt-4 max-w-2xl text-base leading-8 text-white/85 md:text-lg">{t.subtitle}</p>
-        <div className="mt-8 flex flex-wrap items-center gap-3">
+      <div className="relative mx-auto flex h-full max-w-[1500px] flex-col justify-end px-5 pb-12 md:px-10 md:pb-16">
+        <motion.h1
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.4, ease: [0.22, 0.8, 0.2, 1], delay: 0.3 }}
+          className="display text-[clamp(4.5rem,17vw,15rem)]"
+        >
+          {lang === "ar" ? "بيوت أب" : "Beautup"}
+        </motion.h1>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, delay: 1 }}
+          className="mt-6 flex flex-col gap-8 md:flex-row md:items-end md:justify-between"
+        >
+          <p className="max-w-md text-base leading-relaxed text-[#f5f3ef]/85 md:text-lg">{t.hero.line}</p>
           <Link
-            href="#deals"
-            className="rounded-full bg-gold px-7 py-3 text-sm font-medium text-on-gold transition-transform hover:-translate-y-0.5"
+            href="/shop"
+            className="w-fit border border-[#f5f3ef] bg-[#f5f3ef] px-10 py-4 text-sm text-[#0c0c0c] transition-colors hover:bg-transparent hover:text-[#f5f3ef]"
           >
-            {t.cta}
+            {t.hero.cta}
           </Link>
-          <Link
-            href="#categories"
-            className="rounded-full border border-white/50 px-7 py-3 text-sm backdrop-blur-sm transition-colors hover:bg-white/10"
-          >
-            {t.cta2}
-          </Link>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

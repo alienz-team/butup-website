@@ -17,7 +17,7 @@ export default async function LoginPage() {
         <p className="mt-2 text-sm text-muted">{t.login.hint}</p>
         <LoginForm lang={lang} />
         <Link href="/" className="mt-6 block text-center text-sm text-muted underline underline-offset-4 hover:text-fg">
-          {t.category.back}
+          {t.nav.shop}
         </Link>
       </div>
     </main>
